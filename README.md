@@ -43,6 +43,41 @@ Reload the live site and click **Sign in with Microsoft** — you'll get a real 
 > from a preview / different domain gives `AADSTS50011: redirect URI does not
 > match`, because the code sends its own current URL as the redirect.
 
+---
+
+## 3. Shared feed for everyone, with privacy (Supabase)
+
+Without a backend, recognitions are stored only in each person's own browser. To make **all** colleagues share one feed — while keeping nominators anonymous to everyone except admins — connect a free [Supabase](https://supabase.com) project.
+
+**How privacy works:** the server only ever sends *anonymized* rows to regular users (no nominator name/email — it isn't in the data at all, so it can't be seen in browser dev tools). Admins enter a passphrase that's checked **server-side** to reveal who nominated whom. Everyone still sees the recipient (for "Most recognized") and the comment.
+
+### Steps
+1. [supabase.com](https://supabase.com) → sign in → **New project** (region: Singapore). Wait ~2 min.
+2. **SQL Editor → New query** → open `supabase-setup.sql` (in this folder), **replace `CHANGE_ME_ADMIN_PASSPHRASE`** with your own secret, paste the whole script, **Run**.
+3. **Project Settings → API** → copy the **Project URL** and the **anon public** key.
+4. Open `index.html`, find the config block near the top, and fill in:
+
+```js
+supabase: {
+  url:     'https://xxxx.supabase.co',   // Project URL
+  anonKey: 'eyJ...'                       // anon public key
+},
+adminEmails: [
+  'hr.lead@eastgate-software.com'         // who may unlock the admin view
+],
+```
+
+Commit and reload. The feed is now shared in real time (refreshes every ~12s).
+
+### Using the admin view
+- Anyone listed in `adminEmails` sees an **"Admin view"** button in the header after signing in.
+- Clicking it asks for the **admin passphrase** (the one you set in the SQL). Enter it → nominator names appear. Click **"Exit admin"** to go back to the anonymous view.
+- The passphrase lives only in the database function, never in `index.html`.
+
+> The anon key is safe to expose (that's its purpose). Row security only allows
+> inserting recognitions and reading the anonymized feed; full identities require
+> the passphrase checked inside the database.
+
 ### Per-person point tiers (optional)
 By default everyone gets the tier in the demo control (EGSer = 1, Team leader = 3, VNM member = 5). To assign tiers by person, edit the `roleByEmail` block near the top of `index.html`:
 
@@ -52,35 +87,6 @@ roleByEmail: {
   'lan.tran@eastgate-software.com': 'VNM team member'
 }
 ```
-
----
-
-## 3. Optional — shared live feed for everyone (Supabase)
-
-Without a backend, each visitor sees the demo feed locally. To make **all** colleagues see the same recognitions in real time, add a free [Supabase](https://supabase.com) project:
-
-1. Create a project → **SQL Editor** → run:
-
-```sql
-create table recognitions (
-  id          bigint generated always as identity primary key,
-  from_name   text,
-  from_email  text,
-  to_name     text,
-  to_email    text,
-  value_key   text,
-  reason      text,
-  created_at  timestamptz default now()
-);
-alter table recognitions enable row level security;
-create policy "read"   on recognitions for select using (true);
-create policy "insert" on recognitions for insert with check (true);
-```
-
-2. Project **Settings → API** → copy the **Project URL** and **anon public key**.
-3. Paste them into the `supabase: { url: '', anonKey: '' }` line of the config block in `index.html`.
-
-The feed, counters, and leaderboard then run off live data instead of the demo set.
 
 ---
 
