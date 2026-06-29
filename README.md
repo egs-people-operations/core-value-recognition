@@ -34,8 +34,8 @@ Open `index.html` in any text editor (or GitHub's web editor → pencil icon). N
 ```js
 window.EGS_CONFIG = {
   msal: {
-    clientId: '',   // ← 459afc01-7725-4d17-a077-078cc321a911
-    tenantId: ''    // ← 1fd983f3-dc44-42f8-ad66-7972e9d94659
+    clientId: '459afc01-7725-4d17-a077-078cc321a911',
+    tenantId: '1fd983f3-dc44-42f8-ad66-7972e9d94659'
   },
   ...
 };
